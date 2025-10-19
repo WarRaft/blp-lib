@@ -152,7 +152,8 @@ pub extern "C" fn blp_free_image(image: *mut BlpImage) {
 /// Pointer to version string (static memory, no need to free)
 #[unsafe(no_mangle)]
 pub extern "C" fn blp_get_version() -> *const c_char {
-    static VERSION: &[u8] = aa"blp-lib 0.1.0\0";
+    // Use CARGO_PKG_VERSION env var set at build time
+    static VERSION: &str = concat!("blp-lib ", env!("CARGO_PKG_VERSION"), "\0");
     VERSION.as_ptr() as *const c_char
 }
 
@@ -293,10 +294,7 @@ pub extern "C" fn blp_encode_file_to_blp(
     if input_image_path.is_null() || output_blp_path.is_null() { return BlpResult::InvalidInput; }
 
     let in_path = unsafe { CStr::from_ptr(input_image_path) };
-    let out_path = unsafe { CStr::from_ptr(output_blp_path) };
     let in_str = match in_path.to_str() { Ok(s) => s, Err(_) => return BlpResult::InvalidInput };
-    let out_str = match out_path.to_str() { Ok(s) => s, Err(_) => return BlpResult::InvalidInput };
-
     let data = match std::fs::read(in_str) { Ok(d) => d, Err(_) => return BlpResult::ParseError };
     blp_encode_bytes_to_blp(
         data.as_ptr(),
@@ -320,10 +318,7 @@ pub extern "C" fn blp_encode_file_to_blp_with_flags(
     if input_image_path.is_null() || output_blp_path.is_null() { return BlpResult::InvalidInput; }
 
     let in_path = unsafe { CStr::from_ptr(input_image_path) };
-    let out_path = unsafe { CStr::from_ptr(output_blp_path) };
     let in_str = match in_path.to_str() { Ok(s) => s, Err(_) => return BlpResult::InvalidInput };
-    let out_str = match out_path.to_str() { Ok(s) => s, Err(_) => return BlpResult::InvalidInput };
-
     let data = match std::fs::read(in_str) { Ok(d) => d, Err(_) => return BlpResult::ParseError };
     blp_encode_bytes_to_blp_with_flags(
         data.as_ptr(),
@@ -356,12 +351,15 @@ pub extern "C" fn blp_encode_bytes_to_blp(
     let flags = build_mip_visibility_from_count(mip_count.max(1) as usize);
     if let Err(_) = img.decode(buf, &flags) { return BlpResult::ParseError; }
 
-    let out_path = unsafe { CStr::from_ptr(output_blp_path) };
-    let out_str = match out_path.to_str() { Ok(s) => s, Err(_) => return BlpResult::InvalidInput };
-    if let Err(_) = img.export_blp(std::path::Path::new(out_str), quality, &flags) {
-        return BlpResult::UnknownError;
+    match unsafe { CStr::from_ptr(output_blp_path) }.to_str() {
+        Ok(s) => {
+            if let Err(_) = img.export_blp(std::path::Path::new(s), quality, &flags) {
+                return BlpResult::UnknownError;
+            }
+            BlpResult::Success
+        },
+        Err(_) => BlpResult::InvalidInput,
     }
-    BlpResult::Success
 }
 
 /// Encodes an image provided as encoded bytes (PNG/JPG/etc.) to BLP on disk using explicit mip flags.
@@ -396,12 +394,15 @@ pub extern "C" fn blp_encode_bytes_to_blp_with_flags(
 
     if let Err(_) = img.decode(buf, &flags) { return BlpResult::ParseError; }
 
-    let out_path = unsafe { CStr::from_ptr(output_blp_path) };
-    let out_str = match out_path.to_str() { Ok(s) => s, Err(_) => return BlpResult::InvalidInput };
-    if let Err(_) = img.export_blp(std::path::Path::new(out_str), quality, &flags) {
-        return BlpResult::UnknownError;
+    match unsafe { CStr::from_ptr(output_blp_path) }.to_str() {
+        Ok(s) => {
+            if let Err(_) = img.export_blp(std::path::Path::new(s), quality, &flags) {
+                return BlpResult::UnknownError;
+            }
+            BlpResult::Success
+        },
+        Err(_) => BlpResult::InvalidInput,
     }
-    BlpResult::Success
 }
 
 #[cfg(test)]

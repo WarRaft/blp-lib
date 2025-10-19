@@ -16,9 +16,6 @@ static int is_image(const char* name) {
     return strcasecmp(dot, ".png") == 0 || strcasecmp(dot, ".jpg") == 0 || strcasecmp(dot, ".jpeg") == 0 || strcasecmp(dot, ".tga") == 0 || strcasecmp(dot, ".bmp") == 0;
 }
 
-static void join_path(char* out, size_t cap, const char* a, const char* b) {
-    snprintf(out, cap, "%s/%s", a, b);
-}
 
 static void replace_ext(char* path, size_t cap, const char* new_ext) {
     char* dot = strrchr(path, '.');
