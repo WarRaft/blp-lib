@@ -1,3 +1,7 @@
+[![](https://dcbadge.limes.pink/api/server/https://discord.gg/CNeQmXAgVq)](https://discord.gg/CNeQmXAgVq)
+
+[Русская версия документации](README.ru.md)
+
 # blp-lib
 
 Rust library for working with BLP files (Blizzard texture format) with C/C++ interface for use in other projects.
