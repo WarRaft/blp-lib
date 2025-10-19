@@ -45,12 +45,19 @@ strip_safe() {
   local f="$1" kind="${2:-}"
   [[ -f "$f" ]] || return 0
   case "$kind" in
-    macos) /usr/bin/strip -x "$f" || true ;;
-    linux|windows)
-      if [[ -n "$LLVM_STRIP" ]]; then "$LLVM_STRIP" -s "$f" || true
-      else echo "⚠️  Skipping strip for $f (no llvm-strip)"; fi
+    macos)
+      /usr/bin/strip -x "$f" 2> >(grep -v 'input object file already stripped' >&2) || true
       ;;
-    *) [[ -n "$LLVM_STRIP" ]] && "$LLVM_STRIP" -s "$f" || true ;;
+    linux|windows)
+      if [[ -n "$LLVM_STRIP" ]]; then
+        "$LLVM_STRIP" -s "$f" 2> >(grep -v 'already stripped' >&2) || true
+      else
+        echo "⚠️  Skipping strip for $f (no llvm-strip)"
+      fi
+      ;;
+    *)
+      [[ -n "$LLVM_STRIP" ]] && "$LLVM_STRIP" -s "$f" 2> >(grep -v 'already stripped' >&2) || true
+      ;;
   esac
 }
 
