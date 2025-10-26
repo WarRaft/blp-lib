@@ -27,12 +27,12 @@ pub enum BlpResult {
 }
 
 /// Loads BLP file from data buffer
-/// 
+///
 /// # Parameters
 /// * `data` - pointer to BLP file data
 /// * `data_len` - data length in bytes
 /// * `out_image` - pointer to BlpImage structure for storing result
-/// 
+///
 /// # Returns
 /// BlpResult::Success on success, error code on failure
 #[unsafe(no_mangle)]
@@ -46,7 +46,7 @@ pub extern "C" fn blp_load_from_buffer(
     }
 
     let buffer = unsafe { slice::from_raw_parts(data, data_len as usize) };
-    
+
     match ImageBlp::from_buf(buffer) {
         Ok(mut image) => {
             // Decode only base mip by default
@@ -60,26 +60,26 @@ pub extern "C" fn blp_load_from_buffer(
                         if let Some(rgba_image) = &mip.image {
                             let rgba_data = rgba_image.as_raw();
                             let data_len = rgba_data.len();
-                            
+
                             // Allocate memory for image data
                             let data_ptr = unsafe {
                                 libc::malloc(data_len) as *mut u8
                             };
-                            
+
                             if data_ptr.is_null() {
                                 return BlpResult::MemoryError;
                             }
-                            
+
                             // Copy data
                             unsafe {
                                 ptr::copy_nonoverlapping(rgba_data.as_ptr(), data_ptr, data_len);
-                                
+
                                 (*out_image).width = image.width;
                                 (*out_image).height = image.height;
                                 (*out_image).data = data_ptr;
                                 (*out_image).data_len = data_len as c_uint;
                             }
-                            
+
                             BlpResult::Success
                         } else {
                             BlpResult::ParseError
@@ -96,11 +96,11 @@ pub extern "C" fn blp_load_from_buffer(
 }
 
 /// Loads BLP file from filesystem
-/// 
+///
 /// # Parameters
 /// * `filename` - path to BLP file (null-terminated string)
 /// * `out_image` - pointer to BlpImage structure for storing result
-/// 
+///
 /// # Returns
 /// BlpResult::Success on success, error code on failure
 #[unsafe(no_mangle)]
@@ -111,23 +111,23 @@ pub extern "C" fn blp_load_from_file(
     if filename.is_null() || out_image.is_null() {
         return BlpResult::InvalidInput;
     }
-    
+
     let c_str = unsafe { CStr::from_ptr(filename) };
     let rust_str = match c_str.to_str() {
         Ok(s) => s,
         Err(_) => return BlpResult::InvalidInput,
     };
-    
+
     let data = match std::fs::read(rust_str) {
         Ok(data) => data,
         Err(_) => return BlpResult::ParseError,
     };
-    
+
     blp_load_from_buffer(data.as_ptr(), data.len() as c_uint, out_image)
 }
 
 /// Frees memory allocated for BlpImage
-/// 
+///
 /// # Parameters
 /// * `image` - pointer to BlpImage structure to free
 #[unsafe(no_mangle)]
@@ -135,7 +135,7 @@ pub extern "C" fn blp_free_image(image: *mut BlpImage) {
     if image.is_null() {
         return;
     }
-    
+
     unsafe {
         let img = &mut *image;
         if !img.data.is_null() {
@@ -147,7 +147,7 @@ pub extern "C" fn blp_free_image(image: *mut BlpImage) {
 }
 
 /// Gets library version information
-/// 
+///
 /// # Returns
 /// Pointer to version string (static memory, no need to free)
 #[unsafe(no_mangle)]
@@ -158,11 +158,11 @@ pub extern "C" fn blp_get_version() -> *const c_char {
 }
 
 /// Checks if data buffer is a valid BLP file
-/// 
+///
 /// # Parameters
 /// * `data` - pointer to data to check
 /// * `data_len` - data length in bytes
-/// 
+///
 /// # Returns
 /// 1 if data is a valid BLP file, 0 otherwise
 #[unsafe(no_mangle)]
@@ -170,9 +170,9 @@ pub extern "C" fn blp_is_valid(data: *const u8, data_len: c_uint) -> c_int {
     if data.is_null() || data_len == 0 {
         return 0;
     }
-    
+
     let buffer = unsafe { slice::from_raw_parts(data, data_len as usize) };
-    
+
     match ImageBlp::from_buf(buffer) {
         Ok(_) => 1,
         Err(_) => 0,
@@ -413,12 +413,12 @@ mod tests {
     fn test_version() {
         let version = blp_get_version();
         assert!(!version.is_null());
-        
+
         let c_str = unsafe { CStr::from_ptr(version) };
         let version_str = c_str.to_str().unwrap();
         assert!(version_str.starts_with("blp-lib"));
     }
-    
+
     #[test]
     fn test_invalid_input() {
         let mut image = BlpImage {
@@ -427,13 +427,13 @@ mod tests {
             data: ptr::null_mut(),
             data_len: 0,
         };
-        
+
         // Test with null pointers
         assert_eq!(
             blp_load_from_buffer(ptr::null(), 0, &mut image),
             BlpResult::InvalidInput
         );
-        
+
         assert_eq!(
             blp_load_from_file(ptr::null(), &mut image),
             BlpResult::InvalidInput

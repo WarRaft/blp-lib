@@ -200,11 +200,6 @@ Generate BLP from a source image (PNG/JPEG/etc.):
 cargo test
 ```
 
-## Dependencies
-
-- [blp](https://crates.io/crates/blp) - for working with BLP format
-- [libc](https://crates.io/crates/libc) - for memory management in C-compatible mode
-
-## License
-
-See [LICENSE](LICENSE) file.
+<p align="center">
+  <img src="https://raw.githubusercontent.com/WarRaft/blp-lib/refs/heads/main/preview/logo.png" alt="BLP"/>
+</p>
